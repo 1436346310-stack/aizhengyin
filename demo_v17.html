@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI正音 · 单句正音页</title>
+<style>
+:root{
+  --bg:#0A0A0F; --bg2:#101018; --card:#16161F; --card2:#1C1C26;
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.18);
+  --text:#F3F3F7; --muted:#9B9BAB; --dim:#6C6C7C;
+  --acc:#4AF0B0; --bad:#FF4D8D; --warn:#FFC53D;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:480px;margin:0 auto;padding:18px}
+
+/* top nav */
+.top{display:flex;align-items:center;justify-content:space-between;padding:8px 0 14px}
+.logo{font-weight:800;font-size:17px}
+.logo b{color:var(--acc)}
+.back{font-size:13px;color:var(--dim)}
+
+/* progress */
+.prog{display:flex;gap:8px;margin-bottom:18px}
+.prog-step{flex:1;text-align:center;padding:12px 4px;border-radius:14px;background:var(--card);border:1px solid var(--line);color:var(--dim);font-size:11px;transition:.25s}
+.prog-step .n{font-weight:800;font-size:13px;display:block;margin-bottom:2px}
+.prog-step.active{background:rgba(74,240,176,.12);border-color:rgba(74,240,176,.35);color:var(--acc)}
+.prog-step.done{background:rgba(74,240,176,.08);border-color:rgba(74,240,176,.2);color:#8ef7ce}
+
+/* song + lyric card */
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-top:16px}
+.song-head{display:flex;gap:14px;align-items:center;margin-bottom:18px}
+.art{width:68px;height:68px;border-radius:14px;background:linear-gradient(135deg,#4AF0B0 0%,#2BB0FF 50%,#FF4D8D 100%);flex:none;position:relative;overflow:hidden}
+.art::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.25),transparent 60%)}
+.meta{flex:1}
+.meta .k{font-size:11px;color:var(--dim);margin-bottom:4px}
+.meta .t{font-size:17px;font-weight:800}
+.meta .a{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* mv video card in song head */
+/* mv player (Bilibili embed) */
+.mv-wrap{margin-top:16px}
+.mv-frame{width:100%;aspect-ratio:16/9;border:0;display:block;border-radius:16px;background:#000}
+.mv-cap{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.mv-cap .tag{display:inline-flex;align-items:center;gap:6px;color:var(--acc);font-weight:700}
+.mv-cap .tag::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--acc)}
+
+.lyric-kr{font-size:34px;font-weight:900;letter-spacing:-.02em;margin:8px 0 4px}
+.lyric-rom{font-size:14px;color:var(--muted);margin-bottom:16px}
+
+.syls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.syl{flex:1;min-width:58px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:12px 4px;text-align:center;cursor:pointer;transition:.15s}
+.syl:hover{border-color:var(--acc)}
+.syl b{display:block;font-size:19px;font-weight:800}
+.syl span{display:block;font-size:11px;color:var(--dim);margin-top:2px}
+.syl.playing{background:rgba(74,240,176,.14);border-color:var(--acc)}
+.syl.ok{background:rgba(74,240,176,.13);border-color:rgba(74,240,176,.45)}
+.syl.warn{background:rgba(255,197,61,.12);border-color:rgba(255,197,61,.4)}
+.syl.bad{background:rgba(255,77,141,.12);border-color:rgba(255,77,141,.45)}
+
+/* mini original player */
+.mini-player{background:var(--bg2);border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px}
+.mini-player .play{width:40px;height:40px;border-radius:50%;background:var(--acc);color:#04140D;border:0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.mini-player .wave{flex:1;height:32px;display:flex;align-items:center;gap:2px}
+.mini-player .wave i{flex:1;background:var(--dim);border-radius:99px;opacity:.6}
+.mini-player .info{text-align:right;min-width:90px}
+.mini-player .info .l{font-size:12px;font-weight:700}
+.mini-player .info .t{font-size:11px;color:var(--dim);margin-top:2px}
+
+/* step cards */
+.step-card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin-top:16px}
+.step-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.step-num{width:30px;height:30px;border-radius:50%;background:rgba(74,240,176,.14);color:var(--acc);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.step-title{font-size:18px;font-weight:800}
+.step-desc{font-size:13px;color:var(--muted);margin:0 0 18px 42px}
+
+/* audio cards */
+.audio-cards{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.audio-card{flex:1;min-width:118px;background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;transition:.15s}
+.audio-card:hover{border-color:var(--line2)}
+.audio-card.primary{border-color:var(--acc);background:rgba(74,240,176,.07)}
+.audio-card .icon{width:40px;height:40px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;margin-bottom:10px;font-size:17px}
+.audio-card.primary .icon{background:var(--acc);color:#04140D}
+.audio-card .name{font-size:14px;font-weight:700;margin-bottom:3px}
+.audio-card .sub{font-size:11px;color:var(--dim);line-height:1.35;margin-bottom:10px}
+.audio-card .wave{height:22px;display:flex;align-items:center;gap:2px}
+.audio-card .wave i{flex:1;background:var(--dim);border-radius:99px;opacity:.55}
+
+/* record */
+.rec-area{text-align:center;padding:10px 0 4px}
+.mic-btn{width:118px;height:118px;border-radius:50%;background:var(--acc);color:#04140D;border:0;display:inline-flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;box-shadow:0 0 0 0 rgba(74,240,176,.35);transition:.15s}
+.mic-btn:active{transform:scale(.96)}
+.mic-btn.recording{animation:breathe 1.4s infinite}
+.sing-btn.recording{animation:breathe-sing 1.4s infinite}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(74,240,176,.35)}50%{box-shadow:0 0 0 22px rgba(74,240,176,.0)}}
+@keyframes breathe-sing{0%,100%{box-shadow:0 0 0 0 rgba(255,77,141,.35)}50%{box-shadow:0 0 0 22px rgba(255,77,141,.0)}}
+.mic-btn .ic{font-size:34px;margin-bottom:3px}
+.mic-btn .txt{font-size:13px;font-weight:800}
+.rec-wave{height:42px;display:flex;align-items:center;justify-content:center;gap:3px;margin-top:16px}
+.rec-wave i{width:4px;background:var(--acc);border-radius:99px;min-height:4px}
+.rec-hint{font-size:12px;color:var(--dim);margin-top:10px}
+
+/* result syllables */
+.res-syls{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.res-syl{flex:1;min-width:58px;text-align:center;padding:12px 4px;border-radius:14px;background:var(--bg2);border:1px solid var(--line)}
+.res-syl b{display:block;font-size:18px;font-weight:800}
+.res-syl .rom{font-size:11px;color:var(--dim);margin:2px 0 6px}
+.res-syl .score{font-size:22px;font-weight:900}
+.res-syl.ok .score{color:var(--acc)}
+.res-syl.warn .score{color:var(--warn)}
+.res-syl.bad .score{color:var(--bad)}
+
+/* correction card */
+.correction{display:flex;gap:14px;align-items:flex-start;background:linear-gradient(135deg,rgba(255,77,141,.10),rgba(255,197,61,.05));border:1px solid rgba(255,77,141,.35);border-radius:18px;padding:16px}
+.cor-media{flex:none;width:120px;border-radius:14px;overflow:hidden;position:relative;cursor:pointer;background:var(--card);border:1px solid rgba(255,255,255,.08)}
+.cor-media img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.cor-media .play-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.12)}
+.cor-media .play-overlay::before{content:"";width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.5);border:2px solid #fff}
+.cor-media .play-overlay::after{content:"";position:absolute;width:0;height:0;border-left:12px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:3px}
+.cor-body{flex:1;min-width:0}
+.cor-title{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;color:var(--bad);margin-bottom:10px}
+.cor-title .lips-icon{width:22px;height:22px;border-radius:50%;background:rgba(255,77,141,.18);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--bad)}
+.cor-tip{font-size:13.5px;line-height:1.7;color:var(--text);margin-bottom:14px}
+.cor-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* step 4 sing */
+.sing-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sing-col{background:var(--bg2);border-radius:18px;padding:16px;text-align:center}
+.sing-col .label{font-size:13px;font-weight:700;margin-bottom:10px}
+.sing-btn{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,#FF4D8D,#FFC53D);color:#1a0a10;border:0;display:inline-flex;align-items:center;justify-content:center;flex-direction:column;cursor:pointer;margin-top:6px}
+.sing-btn .ic{font-size:28px;margin-bottom:2px}
+.sing-btn .txt{font-size:12px;font-weight:800}
+
+/* complete */
+.complete{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px 20px;text-align:center;margin-top:16px}
+.complete .ok{width:64px;height:64px;border-radius:50%;background:rgba(74,240,176,.12);color:var(--acc);display:inline-flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:14px}
+.complete h3{font-size:20px;font-weight:900;margin-bottom:4px}
+.complete p{font-size:13px;color:var(--muted);margin-bottom:20px}
+.actions{display:flex;gap:10px}
+.btn{flex:1;display:block;text-align:center;background:var(--acc);color:#04140D;font-weight:800;padding:13px;border-radius:14px;font-size:14px;border:0;cursor:pointer;font-family:inherit}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line2)}
+.btn.sm{padding:10px 14px;font-size:13px;width:auto}
+
+/* util */
+.hide{display:none!important}
+.locked{opacity:.45;pointer-events:none}
+.prompt{font-size:13px;color:var(--dim);text-align:center;padding:18px 0}
+
+.mini{font-size:11px;color:var(--dim);text-align:center;padding:24px 0 40px;line-height:1.6}
+
+/* line selector */
+.line-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.line-tab{flex:1;min-width:90px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center;cursor:pointer;transition:.15s}
+.line-tab.active{background:rgba(74,240,176,.12);border-color:rgba(74,240,176,.45)}
+.line-tab .kr{font-size:13px;font-weight:700;display:block;margin-bottom:2px}
+.line-tab .rom{font-size:10px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <div class="logo">AI<b>正音</b></div>
+  <a class="back" href="index.html">← 返回介绍</a>
+</div>
+
+<div class="prog" id="progress">
+  <div class="prog-step active" id="p1"><span class="n">01</span>听这一句</div>
+  <div class="prog-step" id="p2"><span class="n">02</span>跟着读</div>
+  <div class="prog-step" id="p3"><span class="n">03</span>AI纠音</div>
+  <div class="prog-step" id="p4"><span class="n">04</span>放回旋律里唱</div>
+</div>
+
+<!-- song info -->
+<div class="card" id="songCard">
+  <div class="song-head">
+    <div class="song-info" style="display:flex;gap:14px;align-items:center;flex:1;min-width:0">
+      <div class="art"></div>
+      <div class="meta">
+        <div class="k" id="lineIdx">当前练习 · 第 1 句 / 共 4 句</div>
+        <div class="t" id="songTitle">LEMONADE</div>
+        <div class="a" id="songArtist">aespa · 韩语</div>
+      </div>
+    </div>
+  </div>
+  <div class="mv-wrap">
+    <iframe class="mv-frame" src="https://player.bilibili.com/player.html?bvid=BV1fqVb62E3G&page=1&high_quality=1&danmaku=0&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div class="mv-cap">
+      <span class="tag">官方 MV · aespa《LEMONADE》</span>
+      <span>来源：哔哩哔哩 SMTOWN 官方频道</span>
+    </div>
+  </div>
+  <div class="lyric-kr" id="lnKr">전부 삼켜내</div>
+  <div class="lyric-rom" id="lnRom">jeon-bu sam-kyeo-nae</div>
+  <div class="syls" id="syls"></div>
+  <div class="mini-player" id="miniPlayer">
+    <button class="play" id="miniPlay" onclick="playOriginal()">▶</button>
+    <div class="wave" id="miniWave"></div>
+    <div class="info"><div class="l">原曲演唱</div><div class="t" id="miniTime">aespa · LEMONADE</div></div>
+  </div>
+
+  <!-- line selector -->
+  <div style="margin-top:18px">
+    <div style="font-size:12px;color:var(--dim);margin-bottom:10px">选择要练的句子 · 共 4 句</div>
+    <div class="line-tabs" id="lineTabs"></div>
+  </div>
+</div>
+
+<!-- STEP 1 -->
+<div class="step-card" id="step1">
+  <div class="step-head"><div class="step-num">01</div><div class="step-title">先听这一句</div></div>
+  <div class="step-desc">从不同角度听清楚这句歌词的发音和演唱方式。</div>
+  <div class="audio-cards">
+    <div class="audio-card primary" id="ac1" onclick="playOriginal()">
+      <div class="icon">♫</div>
+      <div class="name">原曲演唱</div>
+      <div class="sub">听歌里真实的这一句</div>
+      <div class="wave" id="wave1"></div>
+    </div>
+    <div class="audio-card" id="ac2" onclick="playStandard()">
+      <div class="icon">✦</div>
+      <div class="name">标准发音</div>
+      <div class="sub">去掉旋律，听清楚发音</div>
+      <div class="wave" id="wave2"></div>
+    </div>
+    <div class="audio-card" id="ac3" onclick="playSlow()">
+      <div class="icon">◐</div>
+      <div class="name">慢速发音</div>
+      <div class="sub">逐音节慢速，听清每个音</div>
+      <div class="wave" id="wave3"></div>
+    </div>
+  </div>
+  <div style="margin-top:16px;text-align:center">
+    <button class="btn sm" onclick="goStep(2)">我已听清，开始跟读 →</button>
+  </div>
+</div>
+
+<!-- STEP 2 -->
+<div class="step-card" id="step2">
+  <div class="step-head"><div class="step-num">02</div><div class="step-title">跟着读一句</div></div>
+  <div class="step-desc">先不管旋律，只把发音念准。按住按钮开始录音，松开发送。</div>
+  <div class="rec-area">
+    <button class="mic-btn" id="micBtn" onmousedown="startRead(event)" ontouchstart="startRead(event)" onmouseup="stopRead()" ontouchend="stopRead()" onmouseleave="stopRead()">
+      <span class="ic">🎙</span><span class="txt" id="micTxt">按住跟读</span>
+    </button>
+    <div class="rec-wave" id="recWave"></div>
+    <div class="rec-hint" id="recHint">按住绿色麦克风，念出「<span id="recLine">전부 삼켜내</span>」</div>
+  </div>
+</div>
+
+<!-- STEP 3 result -->
+<div class="step-card hide" id="step3">
+  <div class="step-head"><div class="step-num">03</div><div class="step-title">看看哪里没读准</div></div>
+  <div class="step-desc">AI 将你的发音与标准发音对比，从音节级定位问题，并给出可执行的改进建议。</div>
+  <div class="res-syls" id="resSyls"></div>
+  <div class="correction" id="correction">
+    <div class="cor-media" onclick="showVideoTip()">
+      <img src="img/lips_thumb.jpg" alt="嘴型示范">
+      <div class="play-overlay"></div>
+    </div>
+    <div class="cor-body">
+      <div class="cor-title"><div class="lips-icon">!</div><span id="corTitle">「삼」需要再练一下</span></div>
+      <div class="cor-tip" id="corTip">收音 ㅁ 要闭唇结束，不要直接带到下一个音。先闭唇完成「m」音，再连接到下一音节。</div>
+      <div class="cor-actions">
+        <button class="btn ghost sm" onclick="playLowSyl()">▶ 听标准发音</button>
+        <button class="btn sm" onclick="retryRead()">↻ 再读一次</button>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:18px;text-align:center">
+    <button class="btn sm" onclick="goStep(4)">发音已练准，放回旋律里唱 →</button>
+  </div>
+</div>
+
+<!-- STEP 4 sing -->
+<div class="step-card hide" id="step4">
+  <div class="step-head"><div class="step-num">04</div><div class="step-title">放回旋律里唱</div></div>
+  <div class="step-desc">发音已经练准，现在跟着原曲，把这一句真正唱出来。</div>
+  <div class="sing-grid">
+    <div class="sing-col">
+      <div class="label">再听原曲这一句</div>
+      <div class="mini-player" style="margin-top:8px;background:transparent;padding:0">
+        <button class="play" onclick="playOriginal()">▶</button>
+        <div class="wave" id="singWave"></div>
+      </div>
+    </div>
+    <div class="sing-col">
+      <div class="label">按住唱</div>
+      <button class="sing-btn" id="singBtn" onmousedown="startSing(event)" ontouchstart="startSing(event)" onmouseup="stopSing()" ontouchend="stopSing()" onmouseleave="stopSing()">
+        <span class="ic">🎤</span><span class="txt" id="singTxt">按住唱</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLETE -->
+<div class="complete hide" id="complete">
+  <div class="ok">✓</div>
+  <h3>这一句练会了！</h3>
+  <p>继续练下一句，或者去全民K歌把整首歌唱出来。</p>
+  <div class="actions">
+    <button class="btn ghost" onclick="nextLine()">练下一句 →</button>
+    <button class="btn" onclick="goKge()">🎤 去全民K歌唱整首 →</button>
+  </div>
+</div>
+
+<p class="mini">音频仅在浏览器本地处理，不上传服务器。原曲音频仅用于本次参赛技术演示。</p>
+
+</div>
+
+<script>
+const SONGS=[{
+  title:"LEMONADE", artist:"aespa", lang:"ko",
+  lines:[
+    {kr:"전부 삼켜내", rom:"jeon-bu sam-kyeo-nae", audio:"audio/jeonbu_samkyeonae.wav", start:96.4, end:98.6,
+     syls:[["전","jeon"],["부","bu"],["삼","sam"],["켜","kyeo"],["내","nae"]],
+     sylTips:[
+       "전 的 ㅈ 是松音，力度介于 z 和 c 之间，不要送气过重。",
+       "부 的双唇要真正合上再放开，中文母语者常唱成含糊的 bu。",
+       "삼 收音 ㅁ 要闭唇结束，不要直接带到下一个音。先闭唇完成「m」音，再连接到下一音节。",
+       "켜 是 삼키+어 的连音，要顺着前面的 ㅁ 滑出来；ㅕ 嘴角向两侧拉开。",
+       "내 的 ㅐ 嘴要张开到位，收音不要吞。"
+     ]},
+    {kr:"겁 없이", rom:"geop-eop-si", audio:"audio/geop_eopsi.wav", start:14.7, end:17.0,
+     syls:[["겁","geop"],["없","eop"],["이","si"]],
+     sylTips:[
+       "겁 的收音 ㅂ 要闭唇收住，气流不能漏出来。",
+       "없이 实际读作 eop-ssi，收音后的 ㅅ 移到下一音节，不要断开唱。",
+       "이 舌尖抵住上牙龈，发音短促清晰。"
+     ]},
+    {kr:"던져", rom:"deon-jyeo", audio:"audio/deonjyeo.wav", start:16.75, end:18.6,
+     syls:[["던","deon"],["져","jyeo"]],
+     sylTips:[
+       "던 的收音 ㄴ 舌尖要顶住上牙龈，不要直接滑过去。",
+       "져 的 ㅈ 是松音，力度介于中文 z 和 c 之间，不要送气过重。"
+     ]},
+    {kr:"난 갈아 마셔 다", rom:"nan ga-ra ma-syeo da", audio:"audio/nan_gara_masyeo_da.wav", start:89.2, end:91.6,
+     syls:[["난","nan"],["갈","gal"],["아","a"],["마","ma"],["셔","syeo"],["다","da"]],
+     sylTips:[
+       "난 的收音 ㄴ 要收住再接 갈。",
+       "갈아 读作 ga-ra，收音 ㄹ 要弹一下舌头移到 아。",
+       "아 开口自然，不要拖长。",
+       "마 双唇闭合后快速放开，声音集中。",
+       "셔 的 ㅕ 嘴角拉开，不要唱成中文「雪」。",
+       "다 收尾短促，不要拖长。"
+     ]}
+  ]
+}];
+
+let AC=null,curSong=0,curLine=0,curStep=1;
+let refBuf=null,songBuf=null,userBuf=null,singBuf=null;
+let rec=null,chunks=[],holding=false,singHolding=false;
+let analyser=null,dataArr=null,animId=null;
+let sylCache={},lowSylIdx=-1;
+
+function ac(){return AC=AC||new (window.AudioContext||window.webkitAudioContext)();}
+
+function loadAudio(url){return fetch(url).then(r=>r.arrayBuffer()).then(b=>ac().decodeAudioData(b));}
+async function initAudio(){
+  if(!songBuf) songBuf = await loadAudio('audio/lemonade_full.mp3');
+  await loadLineAudio();
+}
+async function loadLineAudio(){
+  const L=SONGS[curSong].lines[curLine];
+  refBuf = await loadAudio(L.audio);
+  if(L.end===undefined) L.end = L.start + refBuf.duration;
+  renderWaveBars(document.getElementById('wave1'), sliceBuf(songBuf,L.start,L.end-L.start), 28, '#4AF0B0');
+  renderWaveBars(document.getElementById('wave2'), refBuf, 28, '#9B9BAB');
+  renderWaveBars(document.getElementById('wave3'), refBuf, 28, '#9B9BAB');
+  renderWaveBars(document.getElementById('miniWave'), sliceBuf(songBuf,L.start,L.end-L.start), 24, '#4AF0B0');
+  renderWaveBars(document.getElementById('singWave'), sliceBuf(songBuf,L.start,L.end-L.start), 22, '#4AF0B0');
+}
+
+function renderLine(){
+  const L=SONGS[curSong].lines[curLine];
+  document.getElementById('lineIdx').textContent='当前练习 · 第 '+(curLine+1)+' 句 / 共 '+SONGS[curSong].lines.length+' 句';
+  document.getElementById('songTitle').textContent=SONGS[curSong].title;
+  document.getElementById('songArtist').textContent=SONGS[curSong].artist+' · '+(SONGS[curSong].lang==='ko'?'韩语':'日语');
+  document.getElementById('lnKr').textContent=L.kr;
+  document.getElementById('lnRom').textContent=L.rom;
+  document.getElementById('recLine').textContent=L.kr;
+  const sylsEl=document.getElementById('syls');
+  sylsEl.innerHTML='';
+  sylsEl.innerHTML=L.syls.map((s,i)=>
+    '<div class="syl" id="syl-'+i+'" onclick="playSyl('+i+')"><b>'+s[0]+'</b><span>'+s[1]+' ▸</span></div>'
+  ).join('');
+  renderLineTabs();
+  document.getElementById('step3').classList.add('hide');
+  document.getElementById('step4').classList.add('hide');
+  document.getElementById('complete').classList.add('hide');
+  lowSylIdx=-1;
+  goStep(1);
+}
+
+function renderLineTabs(){
+  const lines=SONGS[curSong].lines;
+  document.getElementById('lineTabs').innerHTML=lines.map((L,i)=>
+    '<div class="line-tab '+(i===curLine?'active':'')+'" onclick="setLine('+i+')"><span class="kr">'+L.kr+'</span><span class="rom">'+(i+1)+' / '+lines.length+'</span></div>'
+  ).join('');
+}
+
+function setLine(n){
+  if(n===curLine) return;
+  curLine=n;
+  renderLine();
+  loadLineAudio();
+}
+
+function goStep(n){
+  curStep=n;
+  [1,2,3,4].forEach(i=>{
+    const el=document.getElementById('p'+i);
+    el.classList.remove('active','done');
+    if(i<n) el.classList.add('done');
+    else if(i===n) el.classList.add('active');
+  });
+  if(n===3) document.getElementById('step3').classList.remove('hide');
+  if(n===4) document.getElementById('step4').classList.remove('hide');
+  if(n===3||n===4) setTimeout(()=>document.getElementById('step'+n).scrollIntoView({behavior:'smooth',block:'start'}),50);
+}
+
+let nowSrc=null;
+function stopNow(){if(nowSrc){try{nowSrc.stop();}catch(e){}nowSrc=null;}}
+function playBuf(buf,rate,start,dur){
+  stopNow();
+  if(ac().state==='suspended') ac().resume();
+  const s=ac().createBufferSource();
+  s.buffer=buf; s.playbackRate.value=rate||1;
+  s.connect(ac().destination);
+  s.start(0,start||0,dur||buf.duration);
+  nowSrc=s;
+  return s;
+}
+function sliceBuf(buf,start,dur){
+  const sr=buf.sampleRate; const s=Math.max(0,Math.floor(start*sr));
+  const n=Math.min(Math.floor(dur*sr),buf.length-s);
+  const out=ac().createBuffer(buf.numberOfChannels||1,n,sr);
+  for(let c=0;c<(buf.numberOfChannels||1);c++){
+    out.getChannelData(c).set(buf.getChannelData(c).subarray(s,s+n));
+  }
+  return out;
+}
+
+function playOriginal(){
+  const L=SONGS[curSong].lines[curLine];
+  if(!songBuf){initAudio(); return;}
+  playBuf(sliceBuf(songBuf,L.start,L.end-L.start),1);
+}
+function playStandard(){
+  if(!refBuf){initAudio(); return;}
+  playBuf(refBuf,1);
+}
+function playSlow(){
+  if(!refBuf){initAudio(); return;}
+  playBuf(refBuf,0.6);
+}
+
+async function playSyl(i){
+  const L=SONGS[curSong].lines[curLine];
+  const key=(curLine+1)+'_'+(i+1);
+  try{
+    if(!sylCache[key]) sylCache[key]=await loadAudio('audio/syl_'+key+'.wav');
+    playBuf(sylCache[key],1);
+  }catch(e){
+    if(!refBuf) return;
+    const n=L.syls.length; const seg=refBuf.duration/n;
+    playBuf(refBuf,1,i*seg,seg);
+  }
+  document.querySelectorAll('.syl').forEach(el=>el.classList.remove('playing'));
+  const el=document.getElementById('syl-'+i); if(el) el.classList.add('playing');
+  setTimeout(()=>{if(el)el.classList.remove('playing');},800);
+}
+
+function renderWaveBars(container,buf,bars,color){
+  if(!container) return;
+  const data=buf.getChannelData(0), sr=buf.sampleRate;
+  const step=Math.floor(data.length/bars);
+  let html='';
+  for(let i=0;i<bars;i++){
+    let rms=0; const st=i*step, ed=Math.min(st+step,data.length);
+    for(let j=st;j<ed;j++) rms+=data[j]*data[j];
+    rms=Math.sqrt(rms/(ed-st));
+    const h=Math.max(4,Math.min(100,rms*180));
+    html+='<i style="height:'+h+'%;background:'+color+'"></i>';
+  }
+  container.innerHTML=html;
+}
+
+function initRecWave(){
+  const box=document.getElementById('recWave');
+  box.innerHTML='';
+  for(let i=0;i<32;i++){
+    const bar=document.createElement('i');
+    bar.style.height='4px';
+    box.appendChild(bar);
+  }
+}
+function updateRecWave(){
+  if(!analyser) return;
+  analyser.getByteTimeDomainData(dataArr);
+  const bars=document.getElementById('recWave').children;
+  const step=Math.floor(dataArr.length/bars.length);
+  for(let i=0;i<bars.length;i++){
+    let v=0; const st=i*step, ed=Math.min(st+step,dataArr.length);
+    for(let j=st;j<ed;j++) v+=Math.abs(dataArr[j]-128);
+    const h=Math.max(4,Math.min(42,(v/(ed-st))*1.8));
+    bars[i].style.height=h+'px';
+  }
+  animId=requestAnimationFrame(updateRecWave);
+}
+
+async function startRead(e){if(e)e.preventDefault(); if(holding||singHolding)return; holding=true;
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    rec=new MediaRecorder(stream); chunks=[];
+    rec.ondataavailable=e=>chunks.push(e.data);
+    rec.onstop=async()=>{
+      const blob=new Blob(chunks,{type:rec.mimeType});
+      try{userBuf=await ac().decodeAudioData(await blob.arrayBuffer());}
+      catch(err){holding=false;alert('录音解码失败，请再试');return;}
+      holding=false;
+      document.getElementById('micBtn').classList.remove('recording');
+      document.getElementById('micTxt').textContent='按住跟读';
+      document.getElementById('recHint').textContent='录音完成，正在分析…';
+      showReadResult();
+    };
+    rec.start();
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('micTxt').textContent='正在录音';
+    document.getElementById('recHint').textContent='松开发送，AI 将分析发音';
+    analyser=ac().createAnalyser(); analyser.fftSize=256;
+    dataArr=new Uint8Array(analyser.frequencyBinCount);
+    const src=ac().createMediaStreamSource(stream);
+    src.connect(analyser);
+    initRecWave(); updateRecWave();
+    setTimeout(()=>{if(holding)stopRead();},9000);
+  }catch(err){holding=false;alert('需要麦克风权限才能体验');}
+}
+function stopRead(){if(!holding||!rec||rec.state==='inactive')return;
+  holding=false; rec.stop();
+  if(animId) cancelAnimationFrame(animId);
+  document.getElementById('micBtn').classList.remove('recording');
+  document.getElementById('micTxt').textContent='按住跟读';
+}
+
+async function startSing(e){if(e)e.preventDefault(); if(holding||singHolding)return; singHolding=true;
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    rec=new MediaRecorder(stream); chunks=[];
+    rec.ondataavailable=e=>chunks.push(e.data);
+    rec.onstop=async()=>{
+      const blob=new Blob(chunks,{type:rec.mimeType});
+      try{singBuf=await ac().decodeAudioData(await blob.arrayBuffer());}
+      catch(err){singHolding=false;alert('录音解码失败，请再试');return;}
+      singHolding=false;
+      document.getElementById('singBtn').classList.remove('recording');
+      document.getElementById('singTxt').textContent='按住唱';
+      showComplete();
+    };
+    rec.start();
+    document.getElementById('singBtn').classList.add('recording');
+    document.getElementById('singTxt').textContent='正在唱';
+    setTimeout(()=>{if(singHolding)stopSing();},12000);
+  }catch(err){singHolding=false;alert('需要麦克风权限');}
+}
+function stopSing(){if(!singHolding||!rec||rec.state==='inactive')return;
+  singHolding=false; rec.stop();
+  document.getElementById('singBtn').classList.remove('recording');
+  document.getElementById('singTxt').textContent='按住唱';
+}
+
+// scoring (adapted from demo3)
+function fft(re,im){const n=re.length;for(let i=1,j=0;i<n;i++){let bit=n>>1;for(;j&bit;bit>>=1)j^=bit;j^=bit;if(i<j){[re[i],re[j]]=[re[j],re[i]];[im[i],im[j]]=[im[j],im[i]];}}
+ for(let len=2;len<=n;len<<=1){const ang=-2*Math.PI/len,wr=Math.cos(ang),wi=Math.sin(ang);
+  for(let i=0;i<n;i+=len){let cr=1,ci=0;for(let k=0;k<len/2;k++){const ur=re[i+k],ui=im[i+k],vr=re[i+k+len/2]*cr-im[i+k+len/2]*ci,vi=re[i+k+len/2]*ci+im[i+k+len/2]*cr;
+   re[i+k]=ur+vr;im[i+k]=ui+vi;re[i+k+len/2]=ur-vr;im[i+k+len/2]=ui-vi;const nr=cr*wr-ci*wi;ci=cr*wi+ci*wr;cr=nr;}}}}
+function melFb(sr,N,nf){const fmax=8000,fmin=80,mel=m=>2595*Math.log10(1+m/700),imel=x=>(Math.pow(10,x/2595)-1)*700;
+ const pts=[];for(let i=0;i<nf+2;i++)pts.push(Math.floor((imel(mel(fmin)+(mel(fmax)-mel(fmin))*i/(nf+1))/sr)*N));
+ const fb=[];for(let m=0;m<nf;m++){const a=[];for(let k=0;k<N/2;k++){let v=0;if(k>=pts[m]&&k<pts[m+1])v=(k-pts[m])/(pts[m+1]-pts[m]);else if(k>=pts[m+1]&&k<pts[m+2])v=(pts[m+2]-k)/(pts[m+2]-pts[m+1]);a.push(v);}fb.push(a);}return fb;}
+let FB=null;
+function mfcc(buf,sr){const N=1024,H=512,nf=26;if(!FB)FB=melFb(sr,N,nf);
+ const out=[],rms=[];const win=new Float32Array(N);for(let i=0;i<N;i++)win[i]=0.54-0.46*Math.cos(2*Math.PI*i/(N-1));
+ for(let s=0;s+N<buf.length;s+=H){let e=0;for(let i=0;i<N;i++)e+=buf[s+i]*buf[s+i];rms.push(Math.sqrt(e/N));
+  const re=new Float64Array(N),im=new Float64Array(N);for(let i=0;i<N;i++)re[i]=buf[s+i]*win[i];fft(re,im);
+  const pw=new Float64Array(N/2);for(let k=0;k<N/2;k++)pw[k]=re[k]*re[k]+im[k]*im[k];
+  const lg=[];for(let m=0;m<nf;m++){let v=0;const f=FB[m];for(let k=0;k<N/2;k++)v+=pw[k]*f[k];lg.push(Math.log(v+1e-10));}
+  const c=[];for(let d=1;d<=12;d++){let v=0;for(let m=0;m<nf;m++)v+=lg[m]*Math.cos(Math.PI*d*(m+0.5)/nf);c.push(v);}
+  out.push(c);}
+ return {feat:out,rms:rms};}
+function dtw(A,B){const n=A.length,m=B.length;const INF=1e18,D=new Float64Array((n+1)*(m+1)).fill(INF);D[0]=0;
+ const d=(a,b)=>{let s=0;for(let i=0;i<a.length;i++){const t=a[i]-b[i];s+=t*t;}return Math.sqrt(s);};
+ for(let i=1;i<=n;i++)for(let j=1;j<=m;j++){const c=d(A[i-1],B[j-1]);
+  D[i*(m+1)+j]=Math.min(D[(i-1)*(m+1)+j],D[i*(m+1)+j-1],D[(i-1)*(m+1)+j-1])+c;}
+ const path=[];let i=n,j=m;while(i>0&&j>0){path.push([i-1,j-1]);
+  const c=D[(i-1)*(m+1)+j],l=D[i*(m+1)+j-1],g=D[(i-1)*(m+1)+j-1];const mn=Math.min(c,l,g);
+  if(mn===g){i--;j--;}else if(mn===c){i--;}else{j--;}}
+ path.reverse();return {dist:D[n*(m+1)+m]/Math.max(1,path.length),path:path};}
+function energySegs(rms,N){const tot=rms.reduce((a,b)=>a+b,0)||1;const tgt=tot/N;const segs=[];let acc=0,k=1,st=0;
+ for(let i=0;i<rms.length;i++){acc+=rms[i];if(acc>=k*tgt&&k<N){segs.push([st,i]);st=i+1;k++;}}
+ segs.push([st,rms.length-1]);return segs;}
+function peakCount(rms){const mx=Math.max(...rms)||1;const s=rms.map((_,i)=>{let a=0,c=0;for(let k=-2;k<=2;k++){const j=i+k;if(j>=0&&j<rms.length){a+=rms[j];c++;}}return a/c;});
+ let n=0,last=-9;for(let i=1;i<s.length-1;i++){if(s[i]>s[i-1]&&s[i]>=s[i+1]&&s[i]>mx*0.3&&i-last>=3){n++;last=i;}}
+ return Math.max(1,n);}
+function scoreRead(ref,user){
+ const A=mfcc(ref.getChannelData(0),ref.sampleRate), B=mfcc(user.getChannelData(0),user.sampleRate);
+ if(!A.feat.length||!B.feat.length) return null;
+ const N=SONGS[curSong].lines[curLine].syls.length;
+ const rS=energySegs(A.rms,N).map(s=>(s[1]-s[0]+1));
+ const uS=energySegs(B.rms,N).map(s=>(s[1]-s[0]+1));
+ const rT=rS.reduce((a,b)=>a+b,0)||1, uT=uS.reduce((a,b)=>a+b,0)||1;
+ const per=[]; let pen=0;
+ for(let i=0;i<N;i++){const rp=rS[i]/rT, up=uS[i]/uT, ratio=rp>0?up/rp:1;
+  const dev=Math.min(1.5,Math.abs(ratio-1));
+  per.push({score:Math.max(0,Math.round(100*(1-dev/1.5))),ratio:ratio,short:ratio<0.62,long:ratio>1.65}); pen+=dev;}
+ const durScore=Math.max(0,Math.round(100*(1-(pen/N)/1.5)));
+ const uP=peakCount(B.rms), rP=peakCount(A.rms);
+ const compScore=Math.max(0,Math.round(100*(1-Math.min(1,Math.abs(uP-rP)/Math.max(2,rP)))));
+ const tempoR=user.duration/ref.duration;
+ const tempoScore=Math.max(0,Math.round(100*(1-Math.min(1,Math.abs(Math.log(tempoR))/0.75))));
+ const overall=Math.round(Math.min(100,durScore*0.5+compScore*0.3+tempoScore*0.2));
+ return {overall,per,durScore,compScore,tempoScore,peaks:uP,refPeaks:rP};
+}
+
+function showReadResult(){
+  const L=SONGS[curSong].lines[curLine];
+  const r=scoreRead(refBuf,userBuf);
+  if(!r){document.getElementById('recHint').textContent='录音太短，请再试一次'; return;}
+  document.getElementById('resSyls').innerHTML=L.syls.map((s,i)=>{
+    const p=r.per[i]||{score:0};
+    const cls=p.score>=80?'ok':p.score>=60?'warn':'bad';
+    return '<div class="res-syl '+cls+'"><b>'+s[0]+'</b><div class="rom">'+s[1]+'</div><div class="score">'+p.score+'</div></div>';
+  }).join('');
+  lowSylIdx=0;
+  for(let i=1;i<r.per.length;i++) if(r.per[i].score<r.per[lowSylIdx].score) lowSylIdx=i;
+  const lowSyl=L.syls[lowSylIdx];
+  document.getElementById('corTitle').textContent='「'+lowSyl[0]+'」需要再练一下';
+  document.getElementById('corTip').textContent=L.sylTips[lowSylIdx] || '这个音节的发音还需要更准确地闭合与释放，点击「听标准发音」再对比一次。';
+  goStep(3);
+}
+function playLowSyl(){if(lowSylIdx>=0) playSyl(lowSylIdx);}
+function retryRead(){document.getElementById('step3').classList.add('hide'); goStep(2);}
+
+function showComplete(){
+  goStep(4);
+  setTimeout(()=>{
+    document.getElementById('complete').classList.remove('hide');
+    document.getElementById('complete').scrollIntoView({behavior:'smooth',block:'start'});
+  },200);
+}
+function nextLine(){
+  if(curLine<SONGS[curSong].lines.length-1){curLine++; renderLine();}
+  else{curLine=0; renderLine();}
+}
+function goKge(){alert('正式版将跳转至全民K歌对应歌曲页，继续完成整首演唱。');}
+function showVideoTip(){alert('正式上线后将接入完整 MV / 嘴型示范视频播放能力。');}
+
+// init
+window.addEventListener('DOMContentLoaded',()=>{
+  renderLine();
+  initAudio();
+});
+</script>
+</body>
+</html>

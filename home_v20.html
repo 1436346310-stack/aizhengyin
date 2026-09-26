@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI正音 · 外语歌发音教练</title>
+<link rel="icon" href="img/logo.png">
+<style>
+:root{
+  --bg:#0A0A0F; --bg2:#101018; --card:#16161F; --card2:#1C1C26;
+  --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+  --text:#F3F3F7; --muted:#9B9BAB; --dim:#6C6C7C;
+  --acc:#4AF0B0; --acc2:#FF4D8D; --warn:#FFC53D;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--acc);font-weight:600}
+
+/* nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:50;padding:18px 0;transition:.3s}
+nav.on{background:rgba(10,10,15,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.logo b{color:var(--acc)}
+.nav-links{display:flex;gap:30px;font-size:13.5px;color:var(--muted)}
+.nav-links a:hover{color:var(--text)}
+.btn{display:inline-block;background:var(--acc);color:#04140D;font-weight:700;padding:9px 20px;border-radius:999px;font-size:13.5px}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line2)}
+
+/* hero */
+.hero{padding:150px 0 90px;position:relative;overflow:hidden}
+
+.hero h1{font-size:clamp(58px,10vw,120px);font-weight:900;letter-spacing:-.05em;line-height:.95;margin:18px 0 6px}
+.hero h1 span{color:var(--acc)}
+.hero .sub{font-size:clamp(18px,2.4vw,25px);font-weight:600;margin-bottom:14px}
+.hero .desc{font-size:15.5px;color:var(--muted);max-width:600px}
+.hero-btns{display:flex;gap:12px;margin:30px 0 46px;flex-wrap:wrap}
+.stats{display:flex;gap:44px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:26px}
+.stat b{display:block;font-size:26px;font-weight:800;color:var(--acc)}
+.stat span{font-size:12.5px;color:var(--dim)}
+
+/* sections */
+section{padding:92px 0;position:relative}
+h2{font-size:clamp(30px,4.4vw,46px);font-weight:900;letter-spacing:-.03em;line-height:1.15;margin-bottom:14px}
+.lead{color:var(--muted);font-size:15.5px;max-width:660px;margin-bottom:44px}
+.grid{display:grid;gap:16px}
+.g3{grid-template-columns:repeat(3,1fr)}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px}
+.card h3{font-size:17px;font-weight:700;margin-bottom:8px;color:#F3F3F7}
+.card p{font-size:14px;color:#B9B9C6}
+.card .k{font-size:11px;letter-spacing:.14em;color:var(--acc);font-weight:700;margin-bottom:12px;display:block}
+.num{font-size:13px;font-weight:800;color:var(--acc);border:1px solid var(--acc);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+
+.quote{border-left:2px solid var(--acc);padding:6px 0 6px 22px;margin:36px 0 0;font-size:19px;font-weight:600;line-height:1.6}
+.quote small{display:block;font-size:13px;color:var(--dim);font-weight:400;margin-top:8px}
+
+/* songs */
+.song{display:flex;align-items:center;gap:16px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px}
+.song .flag{font-size:11px;font-weight:800;padding:4px 9px;border-radius:6px;background:rgba(74,240,176,.12);color:var(--acc);white-space:nowrap}
+.song .t{font-weight:700;font-size:15px}
+.song .d{font-size:12.5px;color:var(--dim)}
+.song .why{margin-left:auto;font-size:12px;color:var(--muted);text-align:right;max-width:250px}
+
+/* philosophy */
+.prin{display:flex;gap:14px;align-items:flex-start}
+.prin i{font-style:normal;font-size:20px}
+.prin b{display:block;font-size:16px;margin-bottom:3px}
+.prin p{font-size:13.5px;color:var(--muted)}
+
+/* cta */
+.cta{background:linear-gradient(135deg,rgba(74,240,176,.10),rgba(255,77,141,.07));border:1px solid var(--line2);border-radius:24px;padding:56px 40px;text-align:center}
+.cta h2{margin-bottom:10px}
+.cta p{color:var(--muted);margin-bottom:26px;font-size:15px}
+
+footer{padding:44px 0 60px;border-top:1px solid var(--line);color:var(--dim);font-size:12.5px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.reveal{opacity:1}
+
+@media(max-width:860px){.g3,.song .why{display:none}.nav-links{display:none}}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="wrap nav-in">
+    <img src="img/logo.png" alt="AI正音" style="height:30px;display:block">
+    <div class="nav-links">
+      <a href="#origin">起源</a><a href="#how">工作方式</a><a href="ui_v16.html">入口位置</a><a href="#features">核心体验</a>
+      <a href="#songs">样板曲库</a><a href="#philosophy">设计哲学</a>
+    </div>
+    <a class="btn" href="demo_v18.html">体验 Demo</a>
+  </div>
+</nav>
+
+<header class="hero">
+  
+  <div class="wrap">
+    <div class="eyebrow">TME 产品创新功能 · 全民K歌 × QQ音乐</div>
+    <img src="img/logo.png" alt="AI正音" style="width:min(430px,72vw);display:block;margin:16px 0 10px">
+    <div class="sub">让喜欢的外语歌，开口就能唱</div>
+    <p class="desc">刷到一首喜欢的韩语、日语或英语歌，不必为了几句歌词专门学习一门语言。AI正音从真实歌曲出发，通过听范读、跟读、逐音节纠音，快速找到发音问题；练准之后无缝进入K歌，把喜欢的歌真正唱出来、分享出去。</p>
+    <div class="hero-btns">
+      <a class="btn" href="demo_v18.html">立即体验 Demo</a>
+      <a class="btn ghost" href="#how">看看它怎么工作</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>3 种语言</b><span>韩语 / 日语 / 英语</span></div>
+      <div class="stat"><b>逐音节纠音</b><span>定位问题 · 即时反馈</span></div>
+      <div class="stat"><b>一键开唱</b><span>正音完成 · 直达 K 歌</span></div>
+    </div>
+  </div>
+</header>
+
+<section id="origin">
+  <div class="wrap">
+    <div class="reveal"><div class="eyebrow">起源 · ORIGIN</div><h2>喜欢这首歌，<br>却不敢开口唱</h2>
+    <p class="lead">短视频让越来越多韩语、日语、英语热歌进入大众歌单。听熟旋律并不难，但当用户想真正唱出来，录成作品分享到短视频或朋友圈时，不标准的发音却成了最后一道门槛。</p>
+    <p class="lead">为了唱好几句歌词，专门学习一门语言成本太高；依赖中文谐音，又很难知道自己究竟哪里唱错、应该怎么改。</p></div>
+    <div class="grid g3">
+      <div class="card reveal"><span class="k">问题 01</span><h3>信息失真</h3><p>汉字只能近似读音，无法表达外语中的松音/紧音/送气对立、促音停顿、长音时长、连读弱读。</p></div>
+      <div class="card reveal"><span class="k">问题 02</span><h3>不可执行</h3><p>即使标注了谐音，用户也不知道自己唱得对不对、差在哪里。没有反馈，就没有进步。</p></div>
+      <div class="card reveal"><span class="k">问题 03</span><h3>无法迁移</h3><p>谐音是逐歌死记，换一首歌又要重新记。学习成本无法累积，挫败感反复出现。</p></div>
+    </div>
+    <div class="quote reveal">用户想要的不是学会一门语言，而是把喜欢的这首歌唱准。<small>— AI正音从发音纠正开始，连接K歌练唱，让用户从「会念」到「唱准」，更轻松地完成并分享自己的作品。</small></div>
+  </div>
+</section>
+
+<section id="how" style="background:var(--bg2)">
+  <div class="wrap">
+    <div class="reveal"><div class="eyebrow">工作方式 · HOW IT WORKS</div><h2>四步，把喜欢的这一句<br>从「不会念」唱到「能分享」</h2></div>
+    <div class="grid g2" style="margin-top:36px">
+      <div class="card reveal"><div class="num">01</div><h3>听标准范读</h3><p>原声级发音示范，逐句、逐音节都能反复听。先听清楚这一句，到底应该怎么念。</p></div>
+      <div class="card reveal"><div class="num">02</div><h3>按住跟读</h3><p>跟着原句开口练习，AI 实时记录你的发音。不用学完整语言，只练这首歌真正需要的这一句。</p></div>
+      <div class="card reveal"><div class="num">03</div><h3>AI 逐音节纠音</h3><p>自动定位发音不准的音节，对比标准发音，告诉你哪里不准、应该怎么改，练完即可再次跟读验证。</p></div>
+      <div class="card reveal"><div class="num">04</div><h3>进入 K 歌唱准</h3><p>发音练准后，一键回到歌曲演唱。把刚刚练会的发音真正唱进旋律里，完成作品并分享出去。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="entry">
+  <div class="wrap">
+    <div class="reveal"><div class="eyebrow">WHERE IT LIVES</div><h2>QQ音乐发现喜欢<br>全民K歌把它唱出来</h2>
+    <p class="lead">AI正音不做独立 App，而是嵌入用户原本的听歌与K歌路径。用户在 QQ音乐听到喜欢的外语歌，可以随时进入正音；练准之后直接进入全民K歌完成演唱。从听见、想唱，到练准、唱出、分享，不需要离开原有音乐场景。</p></div>
+    <div class="grid g3" style="margin-top:36px">
+      <div class="card reveal"><span class="k">全民K歌 · 演唱场景</span><h3>唱之前，先把发音练准</h3><p>在现有练唱链路中加入 AI正音。用户可以先纠正歌词发音，再进入歌曲演唱，把刚刚练准的发音真正唱出来。</p></div>
+      <div class="card reveal"><span class="k">QQ音乐 · 歌词页</span><h3>看到这句，随时正音</h3><p>听歌、看歌词时遇到不会念或没把握的外语歌词，直接进入 AI正音，从当前这一句开始练习。</p></div>
+      <div class="card reveal"><span class="k">QQ音乐 · 播放页</span><h3>听到喜欢的，直接去练</h3><p>无需先打开歌词。用户在播放页产生「我也想唱」的冲动时，可以直接进入 AI正音，降低从听歌到开口练唱的路径成本。</p></div>
+    </div>
+    <div style="margin-top:26px"><a class="btn ghost" href="ui_v16.html">查看产品入口设计 →</a></div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="reveal"><div class="eyebrow">核心体验 · FEATURES</div><h2>不只告诉你唱错了<br>更告诉你怎么唱准</h2>
+    <p class="lead">AI把一句外语歌词拆到音节级，听你的发音、找到偏差，再给出能直接照着练的正音提示。不用系统学一门语言，只解决此刻想唱的这一句。</p></div>
+    <div class="grid g3" style="margin-top:36px">
+      <div class="card reveal"><div class="num">01</div><h3>逐音节发音检测</h3><p>跟读后自动对比标准发音，将一句歌词拆到音节级，快速定位具体是哪个音没有唱准，而不是只给一个模糊总分。</p></div>
+      <div class="card reveal"><div class="num">02</div><h3>问题一眼看懂</h3><p>不同音节的发音状态直接呈现在歌词中。哪里准确、哪里有偏差、哪里需要重练，不用理解复杂的语言学术语。</p></div>
+      <div class="card reveal"><div class="num">03</div><h3>告诉你怎么改</h3><p>不只指出错误，还提供简单、可执行的正音提示。嘴型、发音位置、送气、停顿等问题，告诉你下一遍具体怎么唱。</p></div>
+      <div class="card reveal"><div class="num">04</div><h3>随时对比再练</h3><p>标准范读和自己的跟读可以随时切换对比。听出差别、重新跟读、再次检测，直到把这一句真正练准。</p></div>
+      <div class="card reveal"><div class="num">05</div><h3>练准直接开唱</h3><p>正音完成后无需重新找歌，直接进入全民K歌对应歌曲，把刚刚练准的发音放进旋律里，完成整首演唱。</p></div>
+      <div class="card reveal"><div class="num">06</div><h3>唱完就能分享</h3><p>最终目标不是完成一次语言练习，而是产出一首自己愿意分享的外语歌作品，让「喜欢但不敢唱」真正变成「唱出来、发出去」。</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="songs" style="background:var(--bg2)">
+  <div class="wrap">
+    <div class="reveal"><div class="eyebrow">样板曲库 · DEMO SONGS</div><h2>从真正想唱的歌开始<br>韩语 · 日语 · 英语</h2>
+    <p class="lead">不从教材选歌，而从用户真正会听、会刷到、会想唱的歌曲出发。Demo 覆盖韩语、日语、英语，并选取不同典型发音难点，验证 AI正音在真实歌曲中的使用体验。</p></div>
+    <div class="grid" style="gap:10px;margin-top:36px">
+      <div class="song reveal"><span class="flag">韩语</span><div><div class="t">aespa — LEMONADE</div><div class="d">热点歌曲切入 · 收音与连音等典型韩语发音场景</div></div></div>
+      <div class="song reveal"><span class="flag">韩语</span><div><div class="t">BTS — SWIM</div><div class="d">韩英混合歌词 · 多语言切换下的连续发音场景</div></div></div>
+      <div class="song reveal"><span class="flag">日语</span><div><div class="t">Rakune — mosi mosi?</div><div class="d">短句重复度高 · 适合快速完成从跟读到唱准</div></div></div>
+      <div class="song reveal"><span class="flag">日语</span><div><div class="t">HALCALI — Otsukare SUMMER</div><div class="d">促音与长音集中 · 验证日语节奏与时长纠正</div></div></div>
+      <div class="song reveal"><span class="flag">英语</span><div><div class="t">Olivia Dean — Man I Need</div><div class="d">自然连读与弱读 · 解决「单词会念、唱起来不像」的问题</div></div></div>
+      <div class="song reveal"><span class="flag">英语</span><div><div class="t">Alex Warren — Ordinary</div><div class="d">高频副歌场景 · 连读、词尾辅音等典型演唱难点</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="philosophy">
+  <div class="wrap">
+    <div class="reveal"><div class="eyebrow">设计哲学 · Philosophy</div><h2>不学一门语言<br>只练会想唱的这一句</h2>
+    <p class="lead">用户不是为了学会韩语、日语或英语而来，而是因为喜欢一首歌，想把它唱出来。AI正音把学习成本缩小到一句歌词：需要哪一句，就练哪一句；练准之后，直接去唱。</p></div>
+    <div class="grid g3">
+      <div class="card reveal"><div class="prin"><i>◎</i><div><b>01｜只练这一句</b><p>不从字母、语法开始，也不建立课程体系。喜欢哪首歌，就从最想唱的那一句开始。</p></div></div></div>
+      <div class="card reveal"><div class="prin"><i>◎</i><div><b>02｜不只说对错</b><p>不止给一个发音分数，而是找到具体问题，并告诉用户哪里不准、下一遍怎么改。</p></div></div></div>
+      <div class="card reveal"><div class="prin"><i>◎</i><div><b>03｜练完就去唱</b><p>正音不是终点。练准之后直接进入K歌，把这一句放回旋律，最终完成一首真正敢分享的作品。</p></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="brand" style="background:var(--bg2)">
+  <div class="wrap">
+    <div class="reveal"><div class="eyebrow">品牌 · Brand</div><h2>让每一个音节，<br>都有迹可循</h2>
+    <img src="img/logo.png" alt="AI正音" style="width:min(380px,64vw);display:block;margin:6px 0 26px">
+    <p class="lead">AI正音以「声音波形」作为品牌核心视觉：高低变化的声波，代表被拆解、识别与重新校准的发音音节；由浅至亮的薄荷绿，象征声音从「听起来不对」逐渐走向「唱得更准」。我们不用音符做核心符号——AI正音关注的不是一首歌，而是用户唱出的每一个声音。</p></div>
+    <div class="grid g3" style="margin-top:36px">
+      <div class="card reveal"><span class="k">听见 · Listen</span><h3>声波即音节</h3><p>五根高低不同的声波柱，是一次发音被捕捉的瞬间：中心是最强的声音信号，两侧渐弱——一个被拆开的声音单元。</p></div>
+      <div class="card reveal"><span class="k">识别 · Analyze</span><h3>AI 是能力，不是卖点</h3><p>Logo 里没有机器人、芯片和魔法棒。「AI」浅色、「正音」高亮——技术手段退后，产品价值居中：帮你把这句外语歌唱准。</p></div>
+      <div class="card reveal"><span class="k">唱准 · Correct</span><h3>唱准了 = 绿色</h3><p>薄荷绿贯穿 Logo、评分与交互：发音正确是绿色，待改善是中性色，重点问题用辅助色。品牌色即反馈色。</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta reveal">
+      <div class="eyebrow">READY TO TRY</div>
+      <h2>喜欢的这句，<br>现在把它唱准</h2>
+      <p>不用学一门语言，也不用记中文谐音。<br>选一首喜欢的歌，听一句、跟一句、纠一句，然后把它唱出来。</p>
+      <a class="btn" href="demo_v18.html">体验 AI正音 Demo →</a>
+    </div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <div>AI正音 · 外语歌发音教练 — Build With AI 腾讯音乐首届高校 AI Hackathon</div>
+  <div>姜景瀚 · 香港中文大学（深圳） · 17615147411</div>
+</footer>
+
+<script>
+const nav=document.getElementById('nav');
+addEventListener('scroll',()=>nav.classList.toggle('on',scrollY>24));
+
+</script>
+</body>
+</html>
